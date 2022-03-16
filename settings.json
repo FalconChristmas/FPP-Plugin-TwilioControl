@@ -1,0 +1,350 @@
+{
+    "settingGroups": {
+        "TwilioSetup": {
+            "description": "General Twilio Settings",
+            "settings": [
+                "ENABLED",
+                "DEBUG",
+                "TSMS_ACCOUNT_SID",
+                "TSMS_AUTH_TOKEN",
+                "TSMS_PHONE_NUMBER",
+                "TSMS_MODE",
+                "TSMS_POLLING_INTERVAL"
+            ]
+        },
+        "MatrixSetup": {
+            "description": "Output Matrix Settings",
+            "settings": [
+                "FORCE_UPPERCASE",
+                "IMMEDIATE_OUTPUT",
+                "MATRIX_LOCATION",
+                "MATRIX_MODE",
+                "NAMES_PRE_TEXT"
+            ]
+        },
+        "ControlSetup": {
+            "description": "Control via SMS",
+            "settings": [
+                "CONTROL_NUMBERS",
+                "PLAYLIST_NAME",
+                "REMOTE_FPP_ENABLED",
+                "REMOTE_FPP_IP"
+            ] 
+        },
+        "ControlCommands": {
+            "description": "Control Commands",
+            "settings": [
+                "PLAY_COMMANDS",
+                "STOP_COMMANDS",
+                "REPEAT_COMMANDS",
+                "STATUS_COMMANDS"
+            ] 
+        },
+        "ProfanitySetup": {
+            "description": "Profanity Filter Settings",
+            "settings": [
+                "WHITELIST_NUMBERS",
+                "PROFANITY_ENGINE",
+                "API_USER_ID",
+                "API_KEY",
+                "PROFANITY_LANGUAGE",
+                "PROFANITY_THRESHOLD"
+            ]
+        },
+        "ResponsesSetup": {
+            "description": "Response Setup",
+            "settings": [
+                "REPLY_TEXT",
+                "PROFANITY_RESPONSE",
+                "BLACKLIST_RESPONSE",
+                "SYSTEM_DISABLED_RESPONSE"
+            ]
+        }
+    },
+    "settings": {
+        "REMOTE_FPP_ENABLED": {
+            "name": "REMOTE_FPP_ENABLED",
+            "description": "Remote FPP",
+            "tip": "Enable sending the control commands to a different FPP instance for processing",
+            "default": "0",
+            "type": "checkbox",
+            "children": {
+                "1": [
+                    "REMOTE_FPP_IP"
+                ]
+            }
+        },
+        "REMOTE_FPP_IP": {
+            "name": "REMOTE_FPP_IP",
+            "description": "FPP IP",
+            "tip": "Host that will process the control commands",
+            "type": "datalist",
+            "default": "127.0.0.1",
+            "optionsURL": "api/remotes"
+        },
+        "PLAYLIST_NAME": {
+            "name": "PLAYLIST_NAME",
+            "description": "Playlist to start",
+            "tip": "The playlist to start when one of the start commands is received",
+            "type": "select",
+            "optionsURL": "api/playlists/playable"
+        },
+        "STATUS_COMMANDS": {
+            "name": "STATUS_COMMANDS",
+            "description": "Status Commands",
+            "tip": "Commands that can be sent via SMS to query the status",
+            "type": "text",
+            "default": "status",
+            "size": 30,
+            "maxlength": 100
+        },
+        "REPEAT_COMMANDS": {
+            "name": "REPEAT_COMMANDS",
+            "description": "Repeat Commands",
+            "tip": "Commands that can be sent via SMS to toggle repeat",
+            "type": "text",
+            "default": "repeat",
+            "size": 30,
+            "maxlength": 100
+        },
+        "STOP_COMMANDS": {
+            "name": "STOP_COMMANDS",
+            "description": "Stop Commands",
+            "tip": "Commands that can be sent via SMS to stop the playlist",
+            "type": "text",
+            "default": "stop",
+            "size": 30,
+            "maxlength": 100
+        },
+        "PLAY_COMMANDS": {
+            "name": "PLAY_COMMANDS",
+            "description": "Play Commands",
+            "tip": "Commands that can be sent via SMS to start the playlist",
+            "type": "text",
+            "default": "play",
+            "size": 30,
+            "maxlength": 100
+        },
+        "CONTROL_NUMBERS": {
+            "name": "CONTROL_NUMBERS",
+            "description": "Control Number",
+            "tip": "Control Phone Number",
+            "type": "text",
+            "default": "",
+            "size": 20,
+            "maxlength": 20
+        },
+        "FORCE_UPPERCASE": {
+            "name": "FORCE_UPPERCASE",
+            "description": "Force Upper Case",
+            "tip": "Force text to be all Upper Case",
+            "default": "0",
+            "type": "checkbox"
+        },
+        "IMMEDIATE_OUTPUT": {
+            "name": "IMMEDIATE_OUTPUT",
+            "description": "Immediately output",
+            "tip": "Immediately output the text to the matrix instead of adding to the queue.",
+            "default": "0",
+            "type": "checkbox"
+        },
+        "MATRIX_LOCATION": {
+            "name": "MATRIX_LOCATION",
+            "description": "MATRIX Message Plugin Location",
+            "tip": "Host that has the Matrix Message Plugin fully configured",
+            "type": "datalist",
+            "default": "127.0.0.1",
+            "optionsURL": "api/remotes"
+        },
+        "MATRIX_MODE": {
+            "name": "MATRIX_MODE",
+            "description": "Matrix Mode",
+            "tip": "Matrix Mode - Names Only or Free Text",
+            "default": "FREE",
+            "type": "select",
+            "options": {
+                "Free Text": "FREE",
+                "Names Only": "NAMES"
+            }
+        },
+        "NAMES_PRE_TEXT": {
+            "name": "NAMES_PRE_TEXT",
+            "description": "Names Mode Pre text",
+            "tip": "If Names Mode, the Pre text to send in front of their name (e.g. Merry Christmas <name>)",
+            "default": "",
+            "type": "text",
+            "size": 80,
+            "maxlength": 256
+        },
+
+        "TSMS_ACCOUNT_SID": {
+            "name": "TSMS_ACCOUNT_SID",
+            "description": "Twilio Account SID",
+            "tip": "Twilio Account SID",
+            "default": "",
+            "type": "text",
+            "size": 50,
+            "maxlength": 256
+        },
+        "TSMS_AUTH_TOKEN": {
+            "name": "TSMS_AUTH_TOKEN",
+            "description": "Twilio Auth Toaken",
+            "tip": "Twilio Auth Toaken",
+            "default": "",
+            "type": "password",
+            "size": 50,
+            "maxlength": 256
+        },
+        "TSMS_PHONE_NUMBER": {
+            "name": "TSMS_PHONE_NUMBER",
+            "description": "Twilio Phone Number",
+            "tip": "Twilio Phone Number",
+            "default": "",
+            "type": "text",
+            "size": 20,
+            "maxlength": 20
+        },
+
+        "REPLY_TEXT": {
+            "name": "REPLY_TEXT",
+            "description": "Default Response",
+            "tip": "Response when the message is accepted",
+            "default": "Thank you for your message, it has been added to the Queue",
+            "type": "text",
+            "size": 80,
+            "maxlength": 256
+        },
+        "PROFANITY_RESPONSE": {
+            "name": "PROFANITY_RESPONSE",
+            "description": "Profanity Response",
+            "tip": "Response when the text contains profanity",
+            "default": "Your message contains Profanity, Sorry. More messages like this will ban your phone number",
+            "type": "text",
+            "size": 80,
+            "maxlength": 256
+        },
+
+        "BLACKLIST_RESPONSE": {
+            "name": "BLACKLIST_RESPONSE",
+            "description": "Blacklist Response",
+            "tip": "Response when the message comes from a blacklisted source",
+            "default": "We're sorry, we cannot allow this message to be displayed or you have been placed on our blacklist",
+            "type": "text",
+            "size": 80,
+            "maxlength": 256
+        },
+        "SYSTEM_DISABLED_RESPONSE": {
+            "name": "SYSTEM_DISABLED_RESPONSE",
+            "description": "Disabled Response",
+            "tip": "Response when the system is disabled",
+            "default": "We're sorry, the system is not accepting SMS at this time",
+            "type": "text",
+            "size": 80,
+            "maxlength": 256
+        },
+        "WHITELIST_NUMBERS": {
+            "name": "WHITELIST_NUMBERS",
+            "description": "Whitelisted Numbers",
+            "tip": "Comma separates list of numbers that are not processed by the profanity engine",
+            "default": "",
+            "type": "text",
+            "size": 50,
+            "maxlength": 256
+        },
+
+        "PROFANITY_ENGINE": {
+            "name": "PROFANITY_ENGINE",
+            "description": "Profanity Engine",
+            "tip": "Profanity Engine",
+            "default": "NEUTRINO",
+            "type": "select",
+            "options": {
+                "NEUTRINO": "NEUTRINO",
+                "WEBPURIFY": "WEBPURIFY"
+            }
+        },
+        "API_USER_ID": {
+            "name": "API_USER_ID",
+            "description": "Engine User ID",
+            "tip": "Profanity Engine API User ID",
+            "default": "",
+            "type": "text",
+            "size": 50,
+            "maxlength": 256
+        },
+        "API_KEY": {
+            "name": "API_KEY",
+            "description": "Engine API Key",
+            "tip": "Profanity Engine API Key",
+            "default": "",
+            "type": "password",
+            "size": 50,
+            "maxlength": 256
+        },
+        "PROFANITY_LANGUAGE": {
+            "name": "PROFANITY_LANGUAGE",
+            "description": "Language (2 letter code)",
+            "tip": "Profanity Language 2 letter code.  Examples: en, fr, es, de, etc...",
+            "default": "en",
+            "type": "text",
+            "size": 5,
+            "maxlength": 2
+        },
+        "PROFANITY_THRESHOLD": {
+            "name": "PROFANITY_THRESHOLD",
+            "description": "Profanity Threshold",
+            "tip": "Profanity Threshold. If a user sends in more than this number of profanity messages, will alert the control number.",
+            "default": "3",
+            "type": "number",
+            "size": 5,
+            "min": "1",
+            "max": "9999"
+        },
+        "TSMS_MODE": {
+            "name": "TSMS_MODE",
+            "description": "Twilio Messaging Mode",
+            "tip": "How messages are delivered from Twilio to FPP",
+            "default": "WebHook",
+            "type": "select",
+            "restart": 1,
+            "options": {
+                "WebHook Only": "WebHook",
+                "Polling": "Polling"
+            },
+            "children": {
+                "Polling": [
+                    "TSMS_POLLING_INTERVAL"
+                ]
+            }
+        },
+        "TSMS_POLLING_INTERVAL": {
+            "name": "TSMS_POLLING_INTERVAL",
+            "description": "Polling Interval (s)",
+            "tip": "How often Twilio is polled for new messages.",
+            "default": "60",
+            "type": "number",
+            "restart": 1,
+            "size": 6,
+            "min": "1",
+            "max": "100000"
+        },
+        "ENABLED": {
+            "name": "ENABLED",
+            "description": "Enable Twilio Plugin",
+            "tip": "Enable Twilio Plugin",
+            "default": "0",
+            "type": "checkbox",
+            "restart": 1
+        },
+        "DEBUG": {
+            "name": "DEBUG",
+            "description": "Extra Logging/Debug",
+            "tip": "Enable Extra Logging/Debug",
+            "default": "0",
+            "type": "checkbox",
+            "level": 1,
+            "restart": 1
+        }
+
+    }
+}

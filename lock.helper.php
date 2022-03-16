@@ -17,9 +17,13 @@
 		public static function lock() {
 			global $argv;
 
-			$lock_file = LOCK_DIR.$argv[0].LOCK_SUFFIX;
+            if ($argv && isset($argv) && isset($argv[0])) {
+			    $lock_file = LOCK_DIR.$argv[0].LOCK_SUFFIX;
+            } else {
+			    $lock_file = LOCK_DIR . LOCK_SUFFIX;
+            }
 
-			if(file_exists($lock_file)) {
+			if (file_exists($lock_file)) {
 				//return FALSE;
 
 				// Is running?
@@ -45,9 +49,13 @@
 		public static function unlock() {
 			global $argv;
 
-			$lock_file = LOCK_DIR.$argv[0].LOCK_SUFFIX;
+            if ($argv && isset($argv) && isset($argv[0])) {
+			    $lock_file = LOCK_DIR.$argv[0].LOCK_SUFFIX;
+            } else {
+			    $lock_file = LOCK_DIR . LOCK_SUFFIX;
+            }
 
-			if(file_exists($lock_file))
+			if (file_exists($lock_file))
 				unlink($lock_file);
 
 			logEntry("==".self::$pid."== Releasing lock...");

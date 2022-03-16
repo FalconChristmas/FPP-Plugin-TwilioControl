@@ -1,0 +1,30 @@
+[
+  {
+    "name": "Twilio Enable",
+    "script": "TwilioEnable.php",
+    "args": []
+  },
+  {
+    "name": "Twilio Disable",
+    "script": "TwilioDisable.php",
+    "args": []
+  },
+  {
+    "name": "Twilio Send SMS",
+    "script": "TwilioSendSMS.php",
+    "args": [
+      {
+        "name": "Phone Number",
+        "type": "string",
+        "description": "Phone Number",
+        "optional": false
+      },
+      {
+        "name": "Text",
+        "type": "string",
+        "description": "Text",
+        "optional": false
+      }
+    ]
+  }
+]

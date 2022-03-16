@@ -1,30 +1,22 @@
 <?php
 //$DEBUG=true;
 
-include_once "/opt/fpp/www/common.php";
-include_once("/opt/fpp/www/config.php");
+include_once "common.php";
+include_once "config.php";
 include_once 'functions.inc.php';
 include_once 'commonFunctions.inc.php';
 $pluginName = "TwilioControl";
-$TwilioVersion = "2.0";
 
 $messageQueue_Plugin = findPlugin("MessageQueue");
 $MESSAGE_QUEUE_PLUGIN_ENABLED=false;
 
-
 $logFile = $settings['logDirectory']."/".$pluginName.".log";
-
-$pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
-if (file_exists($pluginConfigFile))
-	$pluginSettings = parse_ini_file($pluginConfigFile);
-
 $messageQueuePluginPath = $settings['pluginDirectory']."/".$messageQueue_Plugin."/";
 
-$DEBUG=urldecode($pluginSettings['DEBUG']);
+$DEBUG=ParseBooleanValue($pluginSettings['DEBUG']);
 
 $Plugin_DBName = $settings['configDirectory']."/FPP.".$pluginName.".db";
-if(file_exists($messageQueuePluginPath."functions.inc.php"))
-{
+if (file_exists($messageQueuePluginPath."functions.inc.php")) {
 	include $messageQueuePluginPath."functions.inc.php";
 	$MESSAGE_QUEUE_PLUGIN_ENABLED=true;
     $Plugin_DBName = $settings['configDirectory']."/FPP." . $messageQueue_Plugin . ".db";
@@ -38,7 +30,7 @@ $delBlacklistNumber=null;
 $blacklistNumber=null;
 $messageText=null;
 
-$gitURL = "https://github.com/LightsOnHudson/FPP-Plugin-TwilioControl.git";
+$gitURL = "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl";
 
 //echo "PLUGIN DB:NAME: ".$Plugin_DBName;
 
@@ -50,31 +42,16 @@ logEntry("TWILIO MESSAGE MANAGEMENT: ".$messageQueueFile);
 $blacklistFile = $settings['configDirectory']."/plugin.".$pluginName.".Blacklist";
 $profanityMessageQueueFile = $settings['configDirectory']."/plugin.".$pluginName.".ProfanityQueue";
 
+include_once "pluginSettings.inc.php";
 
-$TSMS_account_sid = urldecode($pluginSettings['TSMS_ACCOUNT_SID']);
-$TSMS_auth_token = urldecode($pluginSettings['TSMS_AUTH_TOKEN']);
-$TSMS_phoneNumber = urldecode($pluginSettings['TSMS_PHONE_NUMBER']);
-$CONTROL_NUMBERS = urldecode ( $pluginSettings ['CONTROL_NUMBERS'] );
-$WHITELIST_NUMBERS = urldecode ( $pluginSettings ['WHITELIST_NUMBERS'] );
 
-$CONTROL_NUMBER_ARRAY = explode ( ",", $CONTROL_NUMBERS );
 
-$WHITELIST_NUMBER_ARRAY = explode ( ",", $WHITELIST_NUMBERS );
 $REFRESH_SECONDS = 5;
-$REFRESH_PAGE = "http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin="."TwilioControl"."&page=messageManagement.php&REFRESH=true&AUTO_REFRESH=ON";
+$REFRESH_PAGE = "plugin.php?plugin=TwilioControl&page=messageManagement.php&REFRESH=true&AUTO_REFRESH=ON";
 
 if(isset($_GET['REFRESH']) && isset($_GET['AUTO_REFRESH'])) {
-?>
-<html>
-<head>
-<meta http-equiv="refresh" content="<?php echo $REFRESH_SECONDS?>;URL='<?php echo $_GET['REFRESH_PAGE']?>'">
-</head>
-<body>
-<?php
-echo "Watch the page reload itself in 10 second!";
-
+    echo "Watch the page reload itself in 10 second!";
 }
-
 
 if($DEBUG) {
 	print_r ($_POST);
@@ -111,7 +88,6 @@ if(isset($_POST['delBlacklistQueue'])) {
 	logEntry("TWILIO MESSAGE MANAGEMENT: Deleting TwilioControl messages from blacklist queue file ".$deleteMessageQueue);
 	
 	$deleteTwilioMessageQueueResult = $db->query($deleteMessageQueue) or die('Unable to delete Twilio Blacklist message Table');
-
 }
 
 if(isset($_POST['removeProfanity'])) {
@@ -165,7 +141,7 @@ if(isset($_POST['sendReply'])) {
 	sendTSMSMessage($profanityReply);
 }
 
-if(isset($_POST['addBlacklist'])) {// != "") {
+if (isset($_POST['addBlacklist'])) {// != "") {
 	logEntry("Adding a blacklist number");
 	
 		
@@ -175,14 +151,11 @@ if(isset($_POST['addBlacklist'])) {// != "") {
 	
 		if($DEBUG) {
 			echo "Black listing phone number: ID: ".$messageID." number: ".$blacklistNumber. " text: ".$messageText."<br/> \n";
-			
 		}
 	
 	//$blacklistNumber = $_POST['phoneNumber'];
-	//$messageText = $_POST['messageText'];
-	
-	//addBlacklist($messageText,$pluginName,$blacklistNumber);
-	insertBlacklistMessage ( $messageText, $pluginName, $blacklistNumber );
+	//$messageText = $_POST['messageText'];	
+	insertBlacklistMessage($messageText, $pluginName, $blacklistNumber);
 	
 	//echo "Number: ".$blacklistNumber." added to ".$pluginName." Blacklist with message: ".$messageText;
 	
@@ -226,13 +199,11 @@ if(isset($_GET['END'])) {
 	
 	
 	echo "<br/> \n";
-	echo "<a href=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=exportMessages.php&nopage=1\">EXPORT Messages</a> \n";
+	echo "<a href=\"plugin.php?plugin=".$pluginName."&page=exportMessages.php&nopage=1\">EXPORT Messages</a> \n";
 	echo "&nbsp&nbsp&nbsp&nbsp \n";
-	echo "<a href=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php&START=".($CURRENT_DAY_START_TIMESTAMP-86400)."&END=".($CURRENT_DAY_END_TIMESTAMP-86400)."\">Previous Day</a> \n";
-	
+	echo "<a href=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php&START=".($CURRENT_DAY_START_TIMESTAMP-86400)."&END=".($CURRENT_DAY_END_TIMESTAMP-86400)."\">Previous Day</a> \n";
 	echo "&nbsp&nbsp&nbsp&nbsp \n";
-	echo "<a href=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php&START=".($CURRENT_DAY_START_TIMESTAMP+86400)."&END=".($CURRENT_DAY_END_TIMESTAMP+86400)."\">Next Day</a> \n";
-	
+	echo "<a href=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php&START=".($CURRENT_DAY_START_TIMESTAMP+86400)."&END=".($CURRENT_DAY_END_TIMESTAMP+86400)."\">Next Day</a> \n";
 	echo "<br/> \n";
 
 	
@@ -240,7 +211,6 @@ if(isset($_GET['END'])) {
 	//ability to EXPORT messages as CSV
 	
 	$messagesQuery = "SELECT * FROM messages WHERE pluginName = '".$pluginName."' AND timestamp > ".$CURRENT_DAY_START_TIMESTAMP." AND timestamp < ".$CURRENT_DAY_END_TIMESTAMP." ORDER BY timestamp DESC";
-	
 	$messagesResult = $db->query($messagesQuery) or die('Query failed');
 	
 
@@ -282,9 +252,7 @@ echo "</td> \n";
 echo "</tr> \n";
 while ($row = $messagesResult->fetchArray()) {
 
-	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
-	
-	
+	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
 	
 	//check if blacklisted..
 	//$blackListCheck = checkBlacklistNumber($row['pluginData']);
@@ -307,40 +275,40 @@ while ($row = $messagesResult->fetchArray()) {
 		$TR="";
 	}
 	
-	echo "<tr bgcolor=\"".$TR."\"> \n";
+	echo "<tr> \n";
 	//unix timestamp
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	
 	echo date('d M Y H:i:s',$row['timestamp']);
 	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".$row['timestamp']."\"> \n";
 	echo "</td> \n";
 	
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
 	echo urldecode($row['message']);
 	echo "<input type=\"hidden\" name=\"messageText\" value=\"".trim($row['message'])."\"> \n";
 	echo "</td> \n";
 	
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
 	echo $row['pluginData'];
 	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".trim($row['pluginData'])."\"> \n";
 	echo "</td> \n";
 	
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$i."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
 	
 	echo "<td> \n";
 	if($blackListCheck)  {
 		echo "BLACK LISTED \n";
 	} else {
-		echo "<input type=\"submit\" name=\"addBlacklist\" value=\"BLACKLIST\"> \n";
+		echo "<input type=\"submit\" class=\"buttons\" name=\"addBlacklist\" value=\"BLACKLIST\"> \n";
 	}
 	echo "</td> \n";
 	echo "<td> \n";
 	echo "<input type=\"text\" size=\"64\" name=\"normalReply\"> \n";
 	echo "<br/> \n";
 	echo "<center> \n";
-	echo "<input type=\"submit\" name=\"sendStandardReply\" value=\"SEND\"> \n";
+	echo "<input type=\"submit\" class=\"buttons\" name=\"sendStandardReply\" value=\"SEND\"> \n";
 	echo "</center> \n";
 	echo "</td> \n";
 	//plugin Subscription
@@ -399,7 +367,7 @@ echo "</td> \n";
 echo "</tr> \n";
 while ($row = $profanityMessageQueryResult->fetchArray()) {
 
-	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
+	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
 
 	
 	$blackListCheck = checkBlacklist($row['pluginData']);
@@ -418,29 +386,29 @@ while ($row = $profanityMessageQueryResult->fetchArray()) {
 		$TR = "red";
 	}
 	
-	echo "<tr bgcolor=\"".$TR."\"> \n";
+	echo "<tr> \n";
 	
 	
 	//unix timestamp
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	
 	echo date('d M Y H:i:s',$row['timestamp']);
 	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".$row['timestamp']."\"> \n";
 	echo "</td> \n";
 	
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
 	echo urldecode($row['message']);
 	echo "<input type=\"hidden\" name=\"messageText\" value=\"".trim($row['message'])."\"> \n";
 	echo "</td> \n";
 	
-	echo "<td> \n";
+	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
 	echo $row['pluginData'];
 	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".trim($row['pluginData'])."\"> \n";
 	echo "</td> \n";
 	
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$i."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
 	
 	echo "<td> \n";
 	if($blackListCheck)  {
@@ -491,7 +459,7 @@ echo "From number \n";
 echo "</td> \n";
 echo "</tr> \n";
 while ($row = $blackListMessageQueryResult->fetchArray()) {
-	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
+	echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
 		if (in_array ( $row['pluginData'], $CONTROL_NUMBER_ARRAY )) {
 		$TR = "yellow";
 	}
@@ -525,7 +493,7 @@ while ($row = $blackListMessageQueryResult->fetchArray()) {
 
 	echo "<td> \n";
 	echo "<input type=\"submit\" name=\"delBlacklist\" value=\"Remove From Blacklist\"> \n";
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$i."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
 	echo "</td> \n";
 	//plugin Subscription
 	//echo "<td> \n";
@@ -543,10 +511,10 @@ echo "</table> \n";
 
 echo "<hr/> \n";
 echo "Message file management \n";
-echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"http://".$_SERVER['SERVER_ADDR']."/plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
-echo "<input type=\"submit\" name=\"delMessageQueue\" value=\"Delete Twilio Messages from Message Queue\"> \n";
-echo "<input type=\"submit\" name=\"delProfanityQueue\" value=\"Delete Profanity Queue\"> \n";
-echo "<input type=\"submit\" name=\"delBlacklistQueue\" value=\"Delete Blacklist Queue\"> \n";
+echo "<form name=\"messageManagementBlacklist\" method=\"post\" action=\"plugin.php?plugin=".$pluginName."&page=messageManagement.php\"> \n";
+echo "<input type=\"submit\" class=\"buttons\" name=\"delMessageQueue\" value=\"Delete Twilio Messages from Message Queue\"> \n";
+echo "<input type=\"submit\" class=\"buttons\" name=\"delProfanityQueue\" value=\"Delete Profanity Queue\"> \n";
+echo "<input type=\"submit\" class=\"buttons\" name=\"delBlacklistQueue\" value=\"Delete Blacklist Queue\"> \n";
 echo "</form> \n";
 
 //echo "<form name=\"MessagesPageRefresh\" method=\"get\" action=\"".$REFRESH_PAGE."\"> \n";
@@ -559,6 +527,5 @@ echo "</form> \n";
 //echo "</form> \n";
 //echo "</textarea> \n";
 
-$db.close();
-echo "</html> \n";
+// $db.close();
 ?>

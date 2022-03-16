@@ -7,12 +7,18 @@
     "homeURL": "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl",
     "srcURL": "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl.git",
     "bugURL": "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl/issues",
-    "allowUpdates": 1,
     "versions": [
         {
             "minFPPVersion": "2.7",
             "maxFPPVersion": "0",
             "branch": "master",
+            "sha": "5d6533e25b8e56db511ed6fa0355763d8f94e2c3"
+        },
+        {
+            "minFPPVersion": "6.0",
+            "maxFPPVersion": "0",
+            "branch": "master",
+            "allowUpdates": 1,
             "sha": ""
         }
     ]
