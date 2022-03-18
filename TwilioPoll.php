@@ -11,8 +11,8 @@ LoadPluginSettings($pluginName);
 include_once $_SERVER["MEDIADIR"] . "/plugins/TwilioControl/functions.inc.php";
 include_once $_SERVER["MEDIADIR"] . "/plugins/TwilioControl/pluginSettings.inc.php";
 
-require 'Twilio/autoload.php';
 use Twilio\Rest\Client;
+
 
 if ($pluginSettings["TSMS_MODE"] == "Polling") {
     // make sure any other TwilioPoll is stopped
