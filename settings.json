@@ -188,8 +188,8 @@
         },
         "TSMS_AUTH_TOKEN": {
             "name": "TSMS_AUTH_TOKEN",
-            "description": "Twilio Auth Toaken",
-            "tip": "Twilio Auth Toaken",
+            "description": "Twilio Auth Token",
+            "tip": "Twilio Auth Token",
             "default": "",
             "type": "password",
             "size": 50,

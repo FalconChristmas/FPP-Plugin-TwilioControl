@@ -36,27 +36,27 @@ createTwilioTables($db);
     <div id='settingsManager'>
         <ul id='settingsManagerTabs' class='nav nav-pills pageContent-tabs' role='tablist'>
             <li class='nav-item'>
-                <a class="nav-link active" id="TwillioSetup-tab" data-toggle="tab" href="#TwillioSetup" data-option="AV" role="tab" aria-controls="TwillioSetup" aria-selected="true">
+                <a class="nav-link active" id="TwillioSetup-tab" data-bs-toggle="tab" href="#TwillioSetup" data-option="AV" role="tab" aria-controls="TwillioSetup" aria-selected="true">
                     Twilio Configuration
                 </a>
             </li>
             <li class='nav-item'>
-                <a class="nav-link" id="MatrixSetup-tab" data-toggle="tab" href="#MatrixSetup" data-option="AV" role="tab" aria-controls="MatrixSetup" aria-selected="true">
+                <a class="nav-link" id="MatrixSetup-tab" data-bs-toggle="tab" href="#MatrixSetup" data-option="AV" role="tab" aria-controls="MatrixSetup" aria-selected="true">
                     Matrix Setup
                 </a>
             </li>
             <li class='nav-item'>
-                <a class="nav-link" id="ControlSetup-tab" data-toggle="tab" href="#ControlSetup" data-option="AV" role="tab" aria-controls="ControlSetup" aria-selected="true">
+                <a class="nav-link" id="ControlSetup-tab" data-bs-toggle="tab" href="#ControlSetup" data-option="AV" role="tab" aria-controls="ControlSetup" aria-selected="true">
                     Control
                 </a>
             </li>
             <li class='nav-item'>
-                <a class="nav-link" id="ProfanitySetup-tab" data-toggle="tab" href="#ProfanitySetup" data-option="AV" role="tab" aria-controls="ProfanitySetup" aria-selected="true">
+                <a class="nav-link" id="ProfanitySetup-tab" data-bs-toggle="tab" href="#ProfanitySetup" data-option="AV" role="tab" aria-controls="ProfanitySetup" aria-selected="true">
                     Profanity Filter
                 </a>
             </li>
             <li class='nav-item'>
-                <a class="nav-link" id="ResponsesSetup-tab" data-toggle="tab" href="#ResponsesSetup" data-option="AV" role="tab" aria-controls="ResponsesSetup" aria-selected="true">
+                <a class="nav-link" id="ResponsesSetup-tab" data-bs-toggle="tab" href="#ResponsesSetup" data-option="AV" role="tab" aria-controls="ResponsesSetup" aria-selected="true">
                     Responses
                 </a>
             </li>
