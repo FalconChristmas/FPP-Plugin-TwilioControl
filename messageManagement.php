@@ -221,6 +221,9 @@ echo "<center><h2><b>ALL Messages (Latest on top)</b></h2> \n";
 echo "<br/> \n";
 echo  date('d M Y H:i:s',$CURRENT_DAY_START_TIMESTAMP)." thru ".date('d M Y H:i:s',$CURRENT_DAY_END_TIMESTAMP)."</center> <br/> \n";
 //echo "<textarea class=\"FormElement\" name=\"messages\" id=\"messages\" cols=\"40\" rows=\"".$messageCount."\">\n";
+// Pin legible text on the semantic status cells so they read correctly in
+// both light and dark mode (the page text color flips in dark mode).
+echo "<style> td[bgcolor=\"yellow\"] { color:#000; } td[bgcolor=\"red\"] { color:#fff; } </style> \n";
 echo "<table cellspacing=\"3\" cellpadding=\"3\" border=\"1\"> \n";
 echo "<tr> \n";
 echo "<td> \n";
