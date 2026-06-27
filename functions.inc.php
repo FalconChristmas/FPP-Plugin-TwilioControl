@@ -351,12 +351,9 @@ function processSequenceName($sequenceName, $sequenceAction = "NONE RECEIVED")
         //    $gv->sendSMS($CONTROL_NUMBER_ARRAY[$i], "PLAYLIST EVENT: Action: ".$sequenceAction);
 
     }
-    logEntry("Plugin Directory: " . $pluginDirectory);
-    //run the sms processor outside of cron
-    $cmd = $pluginDirectory . "/" . $pluginName . "/getSMS.php";
-
-    exec($cmd, $output);
-
+    // Removed: exec of obsolete getSMS.php. The playlist-event SMS
+    // notification this backed was already disabled (loop commented out)
+    // and getSMS.php no longer exists; sequence/playlist callbacks log only.
 }
 
 //process read/sent messages
