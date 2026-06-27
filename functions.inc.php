@@ -208,12 +208,31 @@ function processSMSMessage($from, $messageText, $messageFile = "")
 require 'Twilio/autoload.php';
 use Twilio\Rest\Client;
 
-//process the SMS commnadn coming in from a control number
+// Send an FPP command to the local or remote FPP HTTP API. Replaces the
+// removed `fpp -P/-p/-c` CLI and the removed fppxml.php endpoints (FPP10).
+// FPP parses command args as strings, so bool args are passed as "true"/"false".
+function runFPPCommand($command, $args = array(), $host = "localhost")
+{
+    $payload = json_encode(array("command" => $command, "args" => $args));
+    $url = "http://" . $host . "/api/command";
+    logEntry("FPP API command -> " . $url . " : " . $payload);
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($payload)));
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    $result = curl_exec($ch);
+    if (curl_errno($ch)) {
+        logEntry("FPP API command error: " . curl_error($ch));
+    }
+    curl_close($ch);
+    return $result;
+}
+
+//process the SMS command coming in from a control number
 function processSMSCommand($from, $SMSCommand = "", $playlistName = "")
 {
     global $DEBUG, $SMS_TYPE, $TSMS_phoneNumber, $REMOTE_FPP_ENABLED, $REMOTE_FPP_IP, $TSMS_account_sid, $TSMS_auth_token;
-    $FPPDStatus = false;
-    $output = "";
     $PLAYLIST_NAME = trim($playlistName);
 
     logEntry("Processing command: " . $SMSCommand . " for playlist: " . $PLAYLIST_NAME);
@@ -228,28 +247,29 @@ function processSMSCommand($from, $SMSCommand = "", $playlistName = "")
         return;
     }
 
-    $cmd = "/opt/fpp/src/fpp ";
+    // Local and remote FPP are both driven through the HTTP command API;
+    // only the target host differs.
+    $host = $REMOTE_FPP_ENABLED ? trim($REMOTE_FPP_IP) : "localhost";
+    if ($REMOTE_FPP_ENABLED) {
+        logEntry("Remote FPP Command ENABLED -> " . $host);
+    }
+
     switch (trim(strtoupper($SMSCommand))) {
 
         case "PLAY":
-            $cmd .= "-P \"" . $PLAYLIST_NAME . "\"";
-            $REMOTE_cmd = "/usr/bin/curl \"http://" . $REMOTE_FPP_IP . "/fppxml.php?command=startPlaylist&playList=" . $PLAYLIST_NAME . "\"";
+            runFPPCommand("Start Playlist", array($PLAYLIST_NAME, "false"), $host);
             break;
 
         case "STOP":
-            $cmd .= "-c stop";
-            $REMOTE_cmd = "/usr/bin/curl \"http://" . $REMOTE_FPP_IP . "/fppxml.php?command=stopNow\"";
-
+            runFPPCommand("Stop Now", array(), $host);
             break;
 
         case "REPEAT":
-
-            $cmd .= "-p \"" . $PLAYLIST_NAME . "\"";
-            $REMOTE_cmd = "/usr/bin/curl \"http://" . $REMOTE_FPP_IP . "/fppxml.php?command=startPlaylist&playList=" . $PLAYLIST_NAME . "&repeat=checked\"";
+            runFPPCommand("Start Playlist", array($PLAYLIST_NAME, "true"), $host);
             break;
 
         case "STATUS":
-            $playlistName = getRunningPlaylist();
+            $playlistName = getRunningPlaylist($host);
             if ($playlistName == null) {
                 $playlistName = " No current playlist active or FPPD starting, please try your command again in a few";
             }
@@ -259,21 +279,8 @@ function processSMSCommand($from, $SMSCommand = "", $playlistName = "")
             break;
 
         default:
-            $cmd = "";
+            logEntry("Unknown SMS command: " . $SMSCommand);
             break;
-    }
-
-    if ($REMOTE_FPP_ENABLED) {
-        logEntry("Remote FPP Command ENABLED");
-        $cmd = $REMOTE_cmd;
-    } else {
-        logEntry("Remote FPP command NOT ENABLED");
-    }
-
-    if ($cmd != "") {
-        logEntry("Executing SMS command: " . $cmd);
-        exec($cmd, $output);
-        //system($cmd,$output);
     }
 }
 
@@ -293,40 +300,27 @@ function isFPPDRunning()
     //interate over the results and see if avahi is running?
 
 }
-//get current running playlist
-function getRunningPlaylist()
+//get current running playlist via the FPP status API (local or remote).
+//Replaces the removed /tmp/FPP.playlist status file (FPP10).
+function getRunningPlaylist($host = "localhost")
 {
-
-    global $sequenceDirectory;
     $playlistName = null;
-    $i = 0;
-    //can we sleep here????
 
-    //sleep(10);
-    //FPPD is running and we shoud expect something back from it with the -s status query
-    // #,#,#,Playlist name
-    // #,1,# = running
-
-    $currentFPP = file_get_contents("/tmp/FPP.playlist");
-    logEntry("Reading /tmp/FPP.playlist : " . $currentFPP);
-    if ($currentFPP == "false") {
-        logEntry("We got a FALSE status from fpp -s status file.. we should not really get this, the daemon is locked??");
+    $statusJson = @file_get_contents("http://" . $host . "/api/fppd/status");
+    if ($statusJson === false) {
+        logEntry("Could not read FPP status from http://" . $host . "/api/fppd/status");
+        return null;
     }
-    $fppParts = "";
-    $fppParts = explode(",", $currentFPP);
-//    logEntry("FPP Parts 1 = ".$fppParts[1]);
+    $status = json_decode($statusJson, true);
 
-    //check to see the second variable is 1 - meaning playing
-    if (isset($fppParts[1]) && ($fppParts[1] == 1 || $fppParts[1] == "1")) {
-        //we are playing
-        $playlistParts = pathinfo($fppParts[3]);
-        $playlistName = $playlistParts['basename'];
+    // current_playlist.playlist holds the active playlist name (empty when idle).
+    if (isset($status['current_playlist']['playlist']) && $status['current_playlist']['playlist'] != "") {
+        $playlistName = $status['current_playlist']['playlist'];
         logEntry("We are playing a playlist...: " . $playlistName);
     } else {
-        logEntry("FPPD Daemon is starting up or no active playlist.. please try again");
+        logEntry("No active playlist (status: " . (isset($status['status_name']) ? $status['status_name'] : "unknown") . ")");
     }
 
-    //now we should have had something
     return $playlistName;
 }
 
