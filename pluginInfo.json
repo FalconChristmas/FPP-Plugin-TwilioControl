@@ -43,5 +43,60 @@
             "allowUpdates": 1,
             "sha": ""
         }
-    ]
+    ],
+    "privacy": {
+        "summary": "Lets visitors text your show. Every phone number and message is kept on this player until you delete it, message text goes to an online swearing checker, and setup has you open FPP to the internet.",
+        "sends": [
+            {
+                "to": "api.twilio.com",
+                "what": "your Twilio login, visitors' phone numbers and the text replies sent to them",
+                "why": "To send text replies and, in polling mode, to collect incoming texts",
+                "alwaysOn": false
+            },
+            {
+                "to": "neutrinoapi.com",
+                "what": "the full text of every visitor's message, plus your checker login",
+                "why": "Checks messages for swearing; this is the checker used unless you pick the other",
+                "alwaysOn": false
+            },
+            {
+                "to": "http://api1.webpurify.com",
+                "what": "the full text of every visitor's message, plus your checker password, unencrypted",
+                "why": "Checks messages for swearing, if you pick this checker instead",
+                "alwaysOn": false
+            },
+            {
+                "to": "http://another FPP player you name",
+                "what": "visitors' message text and play/stop commands",
+                "why": "To show messages on a sign or control a second player, only if you set one up",
+                "alwaysOn": false
+            }
+        ],
+        "collects": [
+            {
+                "what": "every visitor's phone number, what they texted and when, plus numbers you have blocked",
+                "about": "visitors",
+                "keptDays": null,
+                "canDelete": true,
+                "where": "config/FPP.TwilioControl.db"
+            },
+            {
+                "what": "every visitor's phone number and message, plus your swearing-checker login",
+                "about": "visitors",
+                "keptDays": null,
+                "canDelete": false,
+                "where": "plugin log"
+            }
+        ],
+        "sensors": [],
+        "remoteAccess": "exposes-fpp",
+        "systemChanges": [
+            {
+                "kind": "network",
+                "what": "Setup tells you to open a door from the internet to this player, so anyone online can reach every FPP page"
+            }
+        ],
+        "closedCode": false,
+        "other": "Nothing checks that a text really came from Twilio, so anyone who can reach this player could make it send texts on your account, costing you money. In polling mode it keeps contacting Twilio even with the plugin switched off. With debugging on, your Twilio password is written to the log. Visitors are given no notice. The message database, log, saved passwords and any door you opened stay after uninstall."
+    }
 }
