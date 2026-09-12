@@ -50,25 +50,25 @@
             {
                 "to": "api.twilio.com",
                 "what": "your Twilio login, visitors' phone numbers and the text replies sent to them",
-                "why": "To send text replies and, in polling mode, to collect incoming texts",
+                "why": "to send text replies and, in polling mode, to collect and then delete every text in your account",
                 "alwaysOn": false
             },
             {
                 "to": "neutrinoapi.com",
                 "what": "the full text of every visitor's message, plus your checker login",
-                "why": "Checks messages for swearing; this is the checker used unless you pick the other",
+                "why": "to check messages for swearing; used unless you pick the other checker",
                 "alwaysOn": false
             },
             {
                 "to": "http://api1.webpurify.com",
-                "what": "the full text of every visitor's message, plus your checker password, unencrypted",
-                "why": "Checks messages for swearing, if you pick this checker instead",
+                "what": "the full text of every visitor's message, plus your checker password",
+                "why": "to check messages for swearing, if you pick this checker instead",
                 "alwaysOn": false
             },
             {
-                "to": "http://another FPP player you name",
+                "to": "another FPP player you name",
                 "what": "visitors' message text and play/stop commands",
-                "why": "To show messages on a sign or control a second player, only if you set one up",
+                "why": "to show messages on a sign or control a second player, only if you set one up",
                 "alwaysOn": false
             }
         ],
@@ -93,7 +93,7 @@
         "systemChanges": [
             {
                 "kind": "network",
-                "what": "Setup tells you to open a door from the internet to this player, so anyone online can reach every FPP page"
+                "what": "setup tells you to open a door from the internet to this player, so anyone online can reach every FPP page"
             }
         ],
         "closedCode": false,
