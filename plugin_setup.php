@@ -10,7 +10,7 @@ $MESSAGE_QUEUE_PLUGIN_ENABLED = false;
 
 $Plugin_DBName = $settings['configDirectory'] . "/FPP." . $pluginName . ".db";
 
-$logFile = $settings['logDirectory'] . "/" . $pluginName . ".log";
+$logFile = $settings['logDirectory'] . "/plugin-" . $pluginName . ".log";
 
 $messageQueuePluginPath = $settings['pluginDirectory'] . "/" . $messageQueue_Plugin . "/";
 

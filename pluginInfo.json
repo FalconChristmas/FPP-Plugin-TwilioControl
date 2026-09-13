@@ -97,6 +97,6 @@
             }
         ],
         "closedCode": false,
-        "other": "Nothing checks that a text really came from Twilio, so anyone who can reach this player could make it send texts on your account, costing you money. In polling mode it keeps contacting Twilio even with the plugin switched off. With debugging on, your Twilio password is written to the log. Visitors are given no notice. The message database, log, saved passwords and any door you opened stay after uninstall."
+        "other": "In polling mode it keeps contacting Twilio even with the plugin switched off. Visitors are given no notice. The message database, log, saved passwords and any door you opened stay after uninstall."
     }
 }

@@ -12,6 +12,7 @@ include_once $_SERVER["MEDIADIR"] . "/plugins/TwilioControl/functions.inc.php";
 include_once $_SERVER["MEDIADIR"] . "/plugins/TwilioControl/pluginSettings.inc.php";
 
 use Twilio\Rest\Client;
+use Twilio\Security\RequestValidator;
 
 
 if ($pluginSettings["TSMS_MODE"] == "Polling") {
@@ -50,7 +51,11 @@ if ($pluginSettings["TSMS_MODE"] == "Polling") {
                     $formData["MessagingServiceSid"] = $msg->messagingServiceSid;
                     $formData["NumMedia"] = $msg->numMedia;
                     
-                    curl_setopt($ch2, CURLOPT_URL, "http://localhost/plugin.php?plugin=TwilioControl&page=TSMS.php&nopage=1");
+                    // sign the hand-off the way Twilio signs a webhook; TSMS.php checks it
+                    $handoffUrl = "http://localhost/plugin.php?plugin=TwilioControl&page=TSMS.php&nopage=1";
+                    $validator = new RequestValidator($TSMS_auth_token);
+                    curl_setopt($ch2, CURLOPT_HTTPHEADER, array("X-Twilio-Signature: " . $validator->computeSignature($handoffUrl, $formData)));
+                    curl_setopt($ch2, CURLOPT_URL, $handoffUrl);
                     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
                     //curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
                     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
@@ -59,6 +64,7 @@ if ($pluginSettings["TSMS_MODE"] == "Polling") {
                     curl_setopt($ch2, CURLOPT_POST, 1);
                     // Edit: prior variable $postFields should be $postfields;
                     curl_setopt($ch2, CURLOPT_POSTFIELDS, $formData);
+                    curl_setopt($ch2, CURLOPT_TIMEOUT, 60);
                     //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // On dev server only!
                     $result2 = curl_exec($ch2);
                 }
