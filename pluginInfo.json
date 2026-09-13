@@ -78,7 +78,7 @@
                 "about": "visitors",
                 "keptDays": null,
                 "canDelete": true,
-                "where": "config/FPP.TwilioControl.db"
+                "where": "plugindata/TwilioControl/"
             },
             {
                 "what": "every visitor's phone number and message, plus your swearing-checker login",
@@ -97,6 +97,6 @@
             }
         ],
         "closedCode": false,
-        "other": "In polling mode it keeps contacting Twilio even with the plugin switched off. Visitors are given no notice. The message database, log, saved passwords and any door you opened stay after uninstall."
+        "other": "With the MessageQueue plugin installed, messages are kept in that plugin's database instead. In polling mode it keeps contacting Twilio even with the plugin switched off. Visitors are given no notice. Uninstall deletes the message database; the log, saved passwords and any door you opened stay."
     }
 }

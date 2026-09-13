@@ -15,11 +15,9 @@ $messageQueuePluginPath = $settings['pluginDirectory']."/".$messageQueue_Plugin.
 
 $DEBUG=ParseBooleanValue($pluginSettings['DEBUG']);
 
-$Plugin_DBName = $settings['configDirectory']."/FPP.".$pluginName.".db";
 if (file_exists($messageQueuePluginPath."functions.inc.php")) {
 	include $messageQueuePluginPath."functions.inc.php";
 	$MESSAGE_QUEUE_PLUGIN_ENABLED=true;
-    $Plugin_DBName = $settings['configDirectory']."/FPP." . $messageQueue_Plugin . ".db";
 } else {
 	logEntry("Message Queue Plugin not installed, some features will be disabled");
 }
@@ -32,11 +30,11 @@ $messageText=null;
 
 $gitURL = "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl";
 
-//echo "PLUGIN DB:NAME: ".$Plugin_DBName;
+$messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE",$messageQueue_Plugin));
+$Plugin_DBName = twilioMessageDatabasePath($MESSAGE_QUEUE_PLUGIN_ENABLED, $messageQueueFile);
 
 $db = new SQLite3($Plugin_DBName) or die('Unable to open database');
 
-$messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE",$messageQueue_Plugin));
 logEntry("TWILIO MESSAGE MANAGEMENT: ".$messageQueueFile);
 
 $blacklistFile = $settings['configDirectory']."/plugin.".$pluginName.".Blacklist";

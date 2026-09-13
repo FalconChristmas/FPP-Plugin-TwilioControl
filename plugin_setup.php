@@ -8,8 +8,6 @@ $pluginName = "TwilioControl";
 $messageQueue_Plugin = findPlugin("MessageQueue");
 $MESSAGE_QUEUE_PLUGIN_ENABLED = false;
 
-$Plugin_DBName = $settings['configDirectory'] . "/FPP." . $pluginName . ".db";
-
 $logFile = $settings['logDirectory'] . "/plugin-" . $pluginName . ".log";
 
 $messageQueuePluginPath = $settings['pluginDirectory'] . "/" . $messageQueue_Plugin . "/";
@@ -18,14 +16,13 @@ $messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE", $messageQueue_
 if (file_exists($messageQueuePluginPath . "functions.inc.php")) {
     include $messageQueuePluginPath . "functions.inc.php";
     $MESSAGE_QUEUE_PLUGIN_ENABLED = true;
-    $Plugin_DBName = $settings['configDirectory'] . "/FPP." . $messageQueue_Plugin . ".db";
 } else {
     logEntry("Message Queue Plugin not installed, some features will be disabled");
 }
 
 $gitURL = "https://github.com/FalconChristmas/FPP-Plugin-TwilioControl";
 
-$Plugin_DBName = $settings['configDirectory'] . "/FPP." . $pluginName . ".db";
+$Plugin_DBName = twilioDatabasePath();
 $db = new SQLite3($Plugin_DBName) or die('Unable to open database');
 //create the default tables if they do not exist!
 createTwilioTables($db);
