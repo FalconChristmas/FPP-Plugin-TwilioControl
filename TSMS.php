@@ -33,14 +33,13 @@ $messageQueuePluginPath = $pluginDirectory . "/" . $messageQueue_Plugin . "/";
 $messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE", $messageQueue_Plugin));
 $profanityMessageQueueFile = $settings['configDirectory'] . "/plugin." . $pluginName . ".ProfanityQueue";
 $blacklistFile = $settings['configDirectory'] . "/plugin." . $pluginName . ".Blacklist";
-$Plugin_DBName = $settings['configDirectory'] . "/FPP." . $pluginName . ".db";
 if (file_exists($messageQueuePluginPath . "functions.inc.php")) {
     include $messageQueuePluginPath . "functions.inc.php";
     $MESSAGE_QUEUE_PLUGIN_ENABLED = true;
-    $Plugin_DBName = $settings['configDirectory'] . "/FPP." . $messageQueue_Plugin . ".db";
 } else {
     logEntry("Message Queue Plugin not installed, some features will be disabled");
 }
+$Plugin_DBName = twilioMessageDatabasePath($MESSAGE_QUEUE_PLUGIN_ENABLED, $messageQueueFile);
 
 // set up DB connection
 
@@ -54,11 +53,6 @@ if ($db != null) {
     createTwilioTables($db);
 }
 
-require "lock.helper.php";
-
-define('LOCK_DIR', '/tmp/');
-define('LOCK_SUFFIX', $pluginName . '.lock');
-
 $logFile = $settings['logDirectory'] . "/plugin-" . $pluginName . ".log";
 include_once "pluginSettings.inc.php";
 
@@ -70,7 +64,6 @@ $TSMS_BODY_CONTAINED_HEX = false;
 if (!empty($_POST) && !twilioRequestSignatureValid($TSMS_auth_token)) {
     logEntry("TWILIO: Rejected request - X-Twilio-Signature missing or invalid");
     http_response_code(403);
-    lockHelper::unlock();
     exit(0);
 }
 
@@ -81,7 +74,6 @@ if (isset($_POST['From']) || $TSMS_from != "") {
 } else {
     logEntry("No Post data in FROM: Exiting");
 
-    lockHelper::unlock();
     exit(0);
 }
 if (isset($_POST['Body']) || $TSMS_body != "") {
@@ -90,7 +82,6 @@ if (isset($_POST['Body']) || $TSMS_body != "") {
     $TSMS_body = "bitch";
 } else {
     logEntry("No Post data in BODY: Exiting");
-    lockHelper::unlock();
     exit(0);
 }
 if ($TSMS_phoneNumber == "" && isset($_POST['To'])) {
@@ -144,7 +135,6 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
         WriteSettingToFile("ENABLED", urlencode("1"), $pluginName);
         logEntry($messageText);
-        lockHelper::unlock();
         exit(0);
     }
     if (trim(strtoupper($TSMS_body)) == "DISABLE" && $ENABLED) {
@@ -158,7 +148,6 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
         WriteSettingToFile("ENABLED", urlencode("0"), $pluginName);
         logEntry($messageText);
-        lockHelper::unlock();
         exit(0);
     }
 
@@ -173,7 +162,6 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
         // WriteSettingToFile("ENABLED",urlencode("0"),$pluginName);
         logEntry($messageText);
-        lockHelper::unlock();
         exit(0);
     }
 
@@ -188,7 +176,6 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
         // WriteSettingToFile("ENABLED",urlencode("1"),$pluginName);
         logEntry($messageText);
-        lockHelper::unlock();
         exit(0);
     }
 }
@@ -198,17 +185,8 @@ if (!$ENABLED) {
     //$REPLY_TEXT_PLUGIN_DISABLED = "We're sorry, the system is not accepting SMS at this time";
     sendTSMSMessage($SYSTEM_DISABLED_RESPONSE);
     logEntry("Plugin Status: DISABLED Please enable in Plugin Setup to use");
-    lockHelper::unlock();
     exit(0);
 }
-
-// want to reply even if locked / disabled
-// if(($pid = lockHelper::lock()) === FALSE) {
-
-// logEntry("System is busy: Matrix active status: ".$MATRIX_ACTIVE);
-// exit(0);
-
-// }
 
 // if the command values do not have anything, set some defaults
 if (trim($playCommands) == "") {
@@ -297,12 +275,10 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
             $REPLY_TEXT_CMD = "Mode changed to " . $MODE . " from control number: " . $TSMS_from;
             sendTSMSMessage($REPLY_TEXT_CMD);
-            lockHelper::unlock();
             exit(0);
         } else {
             $REPLY_TEXT_CMD = "Not a valid mode: " . $MODE . " from control number: " . $TSMS_from;
             sendTSMSMessage($REPLY_TEXT_CMD);
-            lockHelper::unlock();
             exit(0);
         }
     }
@@ -326,7 +302,6 @@ if (in_array($TSMS_from, $CONTROL_NUMBER_ARRAY)) {
 
         // we do not want to do any more besides commands here
         logEntry("Exiting because command executed");
-        lockHelper::unlock();
         exit(0);
     } else {
         // generic message to display from control number just like a regular user
@@ -408,7 +383,6 @@ if (!$WHITELIST_NUMBER_USED && !$CONTROL_NUMBER_USED) {
 
         sendTSMSMessage($REPLY_TEXT);
 
-        lockHelper::unlock();
         exit(0);
     }
 
@@ -477,7 +451,6 @@ if (!$WHITELIST_NUMBER_USED && !$CONTROL_NUMBER_USED) {
             }
         }
 
-        lockHelper::unlock();
         exit(0);
     }
 }
@@ -541,5 +514,4 @@ if (!$IMMEDIATE_OUTPUT) {
 
 // sleep(1);
 
-lockHelper::unlock();
 exit(0);

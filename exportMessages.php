@@ -2,13 +2,13 @@
 header('Content-Type: text/csv; charset=utf-8');
 header('Content-Disposition: attachment; filename=TwilioMessages.csv');
 $pluginName = "TwilioControl";
-$Plugin_DBName = "/home/fpp/media/config/FPP.".$pluginName.".db";
-    
-if(file_exists($settings['configDirectory'] . "/FPP.FPP-Plugin-MessageQueue.db")) {
-    $Plugin_DBName = $settings['configDirectory'] . "/FPP.FPP-Plugin-MessageQueue.db";
-} else if(file_exists($settings['configDirectory'] . "/FPP.MessageQueue.db")) {
-    $Plugin_DBName = $settings['configDirectory'] . "/FPP.MessageQueue.db";
-}
+include_once "common.php";
+include_once 'functions.inc.php';
+
+$messageQueue_Plugin = findPlugin("MessageQueue");
+$messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE", $messageQueue_Plugin));
+$MESSAGE_QUEUE_PLUGIN_ENABLED = file_exists($settings['pluginDirectory'] . "/" . $messageQueue_Plugin . "/functions.inc.php");
+$Plugin_DBName = twilioMessageDatabasePath($MESSAGE_QUEUE_PLUGIN_ENABLED, $messageQueueFile);
 
 $db = new SQLite3($Plugin_DBName) or die('Unable to open database');
 // create a file pointer connected to the output stream

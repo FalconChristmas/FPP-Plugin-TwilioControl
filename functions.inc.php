@@ -1,5 +1,36 @@
 <?php
 
+// Plugin-owned data lives under plugindata/ (crash reports bundle config/ whole).
+// An install that pre-dates the move still has the DB under config/ - move it
+// across once so message history and the blacklist survive the update.
+function twilioDatabasePath()
+{
+    global $settings;
+    $dir = $settings['mediaDirectory'] . "/plugindata/TwilioControl";
+    if (!is_dir($dir) && !@mkdir($dir, 0700, true) && !is_dir($dir)) {
+        logEntry("TWILIO: cannot create " . $dir);
+    }
+    if (!is_writable($dir)) {
+        logEntry("TWILIO: " . $dir . " is not writable by " . get_current_user() . " - check its owner");
+    }
+    $dbFile = $dir . "/FPP.TwilioControl.db";
+    if (!file_exists($dbFile)) {
+        // pre-plugindata location; no-op when there is nothing to move
+        @rename($settings['configDirectory'] . "/FPP.TwilioControl.db", $dbFile);
+    }
+    return $dbFile;
+}
+
+// With the MessageQueue plugin installed, messages go to its DB - the path it
+// publishes as its MESSAGE_FILE setting - so Matrix-Message can read them.
+function twilioMessageDatabasePath($messageQueueEnabled, $messageQueueFile)
+{
+    if ($messageQueueEnabled && trim($messageQueueFile) != "") {
+        return $messageQueueFile;
+    }
+    return twilioDatabasePath();
+}
+
 function findPlugin($plugin)
 {
     if (is_dir("/home/fpp/media/plugins/FPP-Plugin-" . $plugin)) {
@@ -11,7 +42,6 @@ function findPlugin($plugin)
     if ($plugin == "MatrixMessage") {
         return findPlugin("Matrix-Message");
     }
-    echo "Plugin not found: " . $plugin . "\n";
     return $plugin;
 }
 
