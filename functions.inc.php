@@ -38,34 +38,31 @@ function createTwilioTables($db)
     $db->exec($createQuery) or die('Create Table Failed');
 }
 
-function insertTwilioMessage($message, $pluginName, $pluginData)
+// All three tables share one layout; the message text and phone number come
+// straight from the SMS, so they are bound as parameters, never concatenated.
+function insertMessageRow($table, $message, $pluginName, $pluginData)
 {
     global $db;
-    $messagesTable = "messages";
 
-    $insertQuery = "INSERT INTO " . $messagesTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    $stmt = $db->prepare("INSERT INTO " . $table . " (timestamp, message, pluginName, pluginData) VALUES (:timestamp, :message, :pluginName, :pluginData)");
+    $stmt->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+    $stmt->bindValue(':message', urlencode($message), SQLITE3_TEXT);
+    $stmt->bindValue(':pluginName', $pluginName, SQLITE3_TEXT);
+    $stmt->bindValue(':pluginData', $pluginData, SQLITE3_TEXT);
+    logEntry("TWILIO: INSERT into " . $table . " from: " . $pluginData);
+    $stmt->execute() or die('could not insert into database');
+}
+function insertTwilioMessage($message, $pluginName, $pluginData)
+{
+    insertMessageRow("messages", $message, $pluginName, $pluginData);
 }
 function insertBlacklistMessage($message, $pluginName, $pluginData)
 {
-    global $db;
-    $blackListTable = "blacklist";
-
-    $insertQuery = "INSERT INTO " . $blackListTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
-
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    insertMessageRow("blacklist", $message, $pluginName, $pluginData);
 }
 function insertProfanityMessage($message, $pluginName, $pluginData)
 {
-    global $db;
-    $profanityListTable = "profanity";
-
-    $insertQuery = "INSERT INTO " . $profanityListTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
-
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    insertMessageRow("profanity", $message, $pluginName, $pluginData);
 }
 
 //check if the user is in the blacklist
@@ -73,14 +70,14 @@ function checkBlacklist($fromNumber)
 {
     global $db, $DEBUG;
 
-    $blackListTable = "blacklist";
-    $blackListQuery = "SELECT * FROM " . $blackListTable . " WHERE pluginData = '" . $fromNumber . "'";
     if ($DEBUG) {
-        logEntry("TWILIO: Blacklist query: " . $blackListQuery);
+        logEntry("TWILIO: Blacklist check for: " . $fromNumber);
     }
 
-    $result = $db->query($blackListQuery) or die('Query failed');
-    while ($row = $result->fetchArray()) {
+    $stmt = $db->prepare("SELECT timestamp FROM blacklist WHERE pluginData = :number");
+    $stmt->bindValue(':number', $fromNumber, SQLITE3_TEXT);
+    $result = $stmt->execute() or die('Query failed');
+    while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         //TODO: return
         $blackListDate = $row['timestamp'];
         return $blackListDate;
@@ -100,12 +97,11 @@ function checkProfanityCount($numberToCheck)
         logEntry("TWILIO: Inside Checking profanity number: " . $numberToCheck);
     }
 
-    $profanityListTable = "profanity";
-
-    $profanityQuery = "SELECT COUNT(*) FROM " . $profanityListTable . " WHERE pluginData = '" . $numberToCheck . "'";
-    logEntry("TWILIO: Profanity search count query: " . $profanityQuery);
-
-    $profanityCheckCountResult = $db->querySingle($profanityQuery) or die('Query failed');
+    $stmt = $db->prepare("SELECT COUNT(*) FROM profanity WHERE pluginData = :number");
+    $stmt->bindValue(':number', $numberToCheck, SQLITE3_TEXT);
+    $result = $stmt->execute() or die('Query failed');
+    $row = $result->fetchArray(SQLITE3_NUM);
+    $profanityCheckCountResult = $row ? intval($row[0]) : 0;
     logEntry("TWILIO: Profanity check counter: " . $profanityCheckCountResult);
 
     return $profanityCheckCountResult;
@@ -119,12 +115,32 @@ function checkBlacklistNumber($numberToCheck)
     if ($DEBUG) {
         logEntry("Inside Checking blacklist number: " . $numberToCheck);
     }
-    $result = $db->query('SELECT count(*) FROM blacklist where pluginData =\'".$numberToCheck."') or die('Query failed');
-    if ($result > 0) {
-        return true;
-    } else {
+    $stmt = $db->prepare("SELECT COUNT(*) FROM blacklist WHERE pluginData = :number");
+    $stmt->bindValue(':number', $numberToCheck, SQLITE3_TEXT);
+    $result = $stmt->execute() or die('Query failed');
+    $row = $result->fetchArray(SQLITE3_NUM);
+    return ($row && intval($row[0]) > 0);
+}
+
+// Verify an inbound request really came from Twilio before any POST field is
+// trusted. Twilio signs the exact URL it was configured with plus the POST
+// params; TwilioPoll.php signs its localhost hand-off the same way with the
+// same auth token, so both paths pass here. False when X-Twilio-Signature is
+// missing or wrong.
+function twilioRequestSignatureValid($authToken)
+{
+    if (!isset($_SERVER['HTTP_X_TWILIO_SIGNATURE']) || trim($authToken) == "") {
         return false;
     }
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    $host = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST'];
+    $url = ($https ? "https" : "http") . "://" . $host . $_SERVER['REQUEST_URI'];
+
+    // The validator retries with and without an explicit port, which covers
+    // the usual "public port 8080 forwarded to FPP on 80" setup.
+    $validator = new \Twilio\Security\RequestValidator($authToken);
+    return $validator->validate($_SERVER['HTTP_X_TWILIO_SIGNATURE'], $url, $_POST);
 }
 
 //send a TSMS message https post
@@ -162,6 +178,7 @@ function sendTSMSMessage($messageText, $toNumber = "")
     curl_setopt($ch2, CURLOPT_POST, 1);
     // Edit: prior variable $postFields should be $postfields;
     curl_setopt($ch2, CURLOPT_POSTFIELDS, $postfields);
+    curl_setopt($ch2, CURLOPT_TIMEOUT, 30);
     //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // On dev server only!
     $result2 = curl_exec($ch2);
 
@@ -221,6 +238,7 @@ function runFPPCommand($command, $args = array(), $host = "localhost")
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($payload)));
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     $result = curl_exec($ch);
     if (curl_errno($ch)) {
         logEntry("FPP API command error: " . curl_error($ch));

@@ -28,7 +28,7 @@ $MESSAGE_QUEUE_PLUGIN_ENABLED = false;
 $CONTROL_NUMBER_USED = false;
 $WHITELIST_NUMBER_USED = false;
 
-$logFile = $settings['logDirectory'] . "/" . $pluginName . ".log";
+$logFile = $settings['logDirectory'] . "/plugin-" . $pluginName . ".log";
 $messageQueuePluginPath = $pluginDirectory . "/" . $messageQueue_Plugin . "/";
 $messageQueueFile = urldecode(ReadSettingFromFile("MESSAGE_FILE", $messageQueue_Plugin));
 $profanityMessageQueueFile = $settings['configDirectory'] . "/plugin." . $pluginName . ".ProfanityQueue";
@@ -56,15 +56,27 @@ if ($db != null) {
 
 require "lock.helper.php";
 
-define('LOCK_DIR', '/tmp/');
+define('LOCK_DIR', $settings['pluginDirectory'] . '/' . $pluginName . '/');
 define('LOCK_SUFFIX', $pluginName . '.lock');
 
-$logFile = $settings['logDirectory'] . "/" . $pluginName . ".log";
+$logFile = $settings['logDirectory'] . "/plugin-" . $pluginName . ".log";
 include_once "pluginSettings.inc.php";
 
 $TSMS_from = "";
 $TSMS_body = "";
 $TSMS_BODY_CONTAINED_HEX = false;
+
+// Anyone who can reach this URL can POST to it - the port-forward Twilio needs
+// makes that "anyone on the internet". Refuse anything not signed with our auth
+// token (Twilio's own webhooks, or TwilioPoll.php's hand-off) before a single
+// field is read; a forged request could otherwise send texts on the owner's
+// account and run playlist commands.
+if (!empty($_POST) && !twilioRequestSignatureValid($TSMS_auth_token)) {
+    logEntry("TWILIO: Rejected request - X-Twilio-Signature missing or invalid");
+    http_response_code(403);
+    lockHelper::unlock();
+    exit(0);
+}
 
 if (isset($_POST['From']) || $TSMS_from != "") {
     $TSMS_from = $_POST['From'];
@@ -91,7 +103,6 @@ if ($TSMS_phoneNumber == "" && isset($_POST['To'])) {
 
 if ($DEBUG) {
     logEntry("Twilio account_sid: " . $TSMS_account_sid);
-    logEntry("Twilio account pass: " . $TSMS_auth_token);
     logEntry("TSMS message from: " . $TSMS_from);
     logEntry("TSMS Message body: " . $TSMS_body);
     logEntry("Matrix mode: " . $MATRIX_MODE);
@@ -520,6 +531,7 @@ if (!$IMMEDIATE_OUTPUT) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_WRITEFUNCTION, 'do_nothing');
     curl_setopt($ch, CURLOPT_VERBOSE, false);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
     $result = curl_exec($ch);
     logEntry("Curl result: " . $result); // $result;

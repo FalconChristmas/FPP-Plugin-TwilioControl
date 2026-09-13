@@ -55,8 +55,8 @@
 			    $lock_file = LOCK_DIR . LOCK_SUFFIX;
             }
 
-			if (file_exists($lock_file))
-				unlink($lock_file);
+			// best-effort cleanup of our own lock file - it may already be gone
+			@unlink($lock_file);
 
 			logEntry("==".self::$pid."== Releasing lock...");
 			//error_log("==".self::$pid."== Releasing lock...");

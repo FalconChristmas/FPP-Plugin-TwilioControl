@@ -10,7 +10,7 @@ $pluginName = "TwilioControl";
 $messageQueue_Plugin = findPlugin("MessageQueue");
 $MESSAGE_QUEUE_PLUGIN_ENABLED=false;
 
-$logFile = $settings['logDirectory']."/".$pluginName.".log";
+$logFile = $settings['logDirectory']."/plugin-".$pluginName.".log";
 $messageQueuePluginPath = $settings['pluginDirectory']."/".$messageQueue_Plugin."/";
 
 $DEBUG=ParseBooleanValue($pluginSettings['DEBUG']);
@@ -100,11 +100,12 @@ if(isset($_POST['removeProfanity'])) {
 	
 	
 	
-	$deleteProfanityMessageQuery = "DELETE FROM profanity WHERE pluginData = '".$delProfanityNumber."' AND timestamp ='".$messageTimestamp."'";
+	logEntry("TWILIO MESSAGE MANAGEMENT: Delete profanity entry for ".$delProfanityNumber." at ".$messageTimestamp);
 	
-	logEntry("TWILIO MESSAGE MANAGEMENT: Delete profanity query: ".$deleteProfanityMessageQuery);
-	
-	$deleteProfanityMessageResult = $db->query($deleteProfanityMessageQuery) or die('Query failed');
+	$stmt = $db->prepare("DELETE FROM profanity WHERE pluginData = :number AND timestamp = :timestamp");
+	$stmt->bindValue(':number', $delProfanityNumber, SQLITE3_TEXT);
+	$stmt->bindValue(':timestamp', intval($messageTimestamp), SQLITE3_INTEGER);
+	$deleteProfanityMessageResult = $stmt->execute() or die('Query failed');
 	//load file into $fc array
 	
 	//$db.close();
@@ -175,23 +176,23 @@ if (isset($_POST['addBlacklist'])) {// != "") {
 	
 		
 		//delete from blacklist all entries of that number!
-		$deleteBlacklistQuery = "DELETE FROM blacklist WHERE pluginData = '".$delBlacklistNumber."'";// AND timestamp ='".$messageTimestamp."'";
+		logEntry("TWILIO MESSAGE MANAGEMENT: Delete blacklist entries for ".$delBlacklistNumber);
 		
-		logEntry("TWILIO MESSAGE MANAGEMENT: Delete blacklist query: ".$deleteBlacklistQuery);
-		
-		$deleteBlacklistQueryResult = $db->query($deleteBlacklistQuery) or die('Query failed');
+		$stmt = $db->prepare("DELETE FROM blacklist WHERE pluginData = :number");
+		$stmt->bindValue(':number', $delBlacklistNumber, SQLITE3_TEXT);
+		$deleteBlacklistQueryResult = $stmt->execute() or die('Query failed');
 		
 		}
 
 
 if(isset($_GET['START'])) {
-	$CURRENT_DAY_START_TIMESTAMP = $_GET['START'];
+	$CURRENT_DAY_START_TIMESTAMP = intval($_GET['START']);
 } else {
 	$CURRENT_DAY_START_TIMESTAMP = mkTimestamp(date("Y"),date("m"),date("d"),0,0,0);
 }
 
 if(isset($_GET['END'])) {
-	$CURRENT_DAY_END_TIMESTAMP = $_GET['END'];
+	$CURRENT_DAY_END_TIMESTAMP = intval($_GET['END']);
 } else {
 	$CURRENT_DAY_END_TIMESTAMP = mkTimestamp(date("Y"),date("m"),date("d"), 23,59,59);
 }
@@ -210,8 +211,11 @@ if(isset($_GET['END'])) {
 	//put the links as form links to go backwards and forwards to see messages
 	//ability to EXPORT messages as CSV
 	
-	$messagesQuery = "SELECT * FROM messages WHERE pluginName = '".$pluginName."' AND timestamp > ".$CURRENT_DAY_START_TIMESTAMP." AND timestamp < ".$CURRENT_DAY_END_TIMESTAMP." ORDER BY timestamp DESC";
-	$messagesResult = $db->query($messagesQuery) or die('Query failed');
+	$stmt = $db->prepare("SELECT * FROM messages WHERE pluginName = :pluginName AND timestamp > :start AND timestamp < :end ORDER BY timestamp DESC");
+	$stmt->bindValue(':pluginName', $pluginName, SQLITE3_TEXT);
+	$stmt->bindValue(':start', $CURRENT_DAY_START_TIMESTAMP, SQLITE3_INTEGER);
+	$stmt->bindValue(':end', $CURRENT_DAY_END_TIMESTAMP, SQLITE3_INTEGER);
+	$messagesResult = $stmt->execute() or die('Query failed');
 	
 
 echo "<center><h1><b>".$pluginName." Message Management</b></h1></center> <br/> \n";
@@ -283,22 +287,22 @@ while ($row = $messagesResult->fetchArray()) {
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	
 	echo date('d M Y H:i:s',$row['timestamp']);
-	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".$row['timestamp']."\"> \n";
+	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".htmlspecialchars($row['timestamp'], ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
-	echo urldecode($row['message']);
-	echo "<input type=\"hidden\" name=\"messageText\" value=\"".trim($row['message'])."\"> \n";
+	echo htmlspecialchars(urldecode($row['message']), ENT_QUOTES);
+	echo "<input type=\"hidden\" name=\"messageText\" value=\"".htmlspecialchars(trim($row['message']), ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
-	echo $row['pluginData'];
-	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".trim($row['pluginData'])."\"> \n";
+	echo htmlspecialchars($row['pluginData'], ENT_QUOTES);
+	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".htmlspecialchars(trim($row['pluginData']), ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".htmlspecialchars($row["messageID"], ENT_QUOTES)."\"> \n";
 	
 	echo "<td> \n";
 	if($blackListCheck)  {
@@ -396,22 +400,22 @@ while ($row = $profanityMessageQueryResult->fetchArray()) {
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	
 	echo date('d M Y H:i:s',$row['timestamp']);
-	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".$row['timestamp']."\"> \n";
+	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".htmlspecialchars($row['timestamp'], ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
-	echo urldecode($row['message']);
-	echo "<input type=\"hidden\" name=\"messageText\" value=\"".trim($row['message'])."\"> \n";
+	echo htmlspecialchars(urldecode($row['message']), ENT_QUOTES);
+	echo "<input type=\"hidden\" name=\"messageText\" value=\"".htmlspecialchars(trim($row['message']), ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
 	echo "<td bgcolor=\"".$TR."\"> \n";
 	//message data
-	echo $row['pluginData'];
-	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".trim($row['pluginData'])."\"> \n";
+	echo htmlspecialchars($row['pluginData'], ENT_QUOTES);
+	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".htmlspecialchars(trim($row['pluginData']), ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".htmlspecialchars($row["messageID"], ENT_QUOTES)."\"> \n";
 	
 	echo "<td> \n";
 	if($blackListCheck)  {
@@ -479,24 +483,24 @@ while ($row = $blackListMessageQueryResult->fetchArray()) {
 	echo "<td> \n";
 
 	echo date('d M Y H:i:s',$row['timestamp']);
-	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".$row['timestamp']."\"> \n";
+	echo "<input type=\"hidden\" name=\"timestamp\" value=\"".htmlspecialchars($row['timestamp'], ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 
 	echo "<td> \n";
 	//message data
-	echo urldecode($row['message']);
+	echo htmlspecialchars(urldecode($row['message']), ENT_QUOTES);
 	
 	echo "</td> \n";
 
 	echo "<td> \n";
 	//message data
-	echo $row['pluginData'];
-	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".trim( $row['pluginData'])."\"> \n";
+	echo htmlspecialchars($row['pluginData'], ENT_QUOTES);
+	echo "<input type=\"hidden\" name=\"phoneNumber\" value=\"".htmlspecialchars(trim($row['pluginData']), ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 
 	echo "<td> \n";
 	echo "<input type=\"submit\" name=\"delBlacklist\" value=\"Remove From Blacklist\"> \n";
-	echo "<input type=\"hidden\" name=\"messageID\" value=\"".$row["messageID"]."\"> \n";
+	echo "<input type=\"hidden\" name=\"messageID\" value=\"".htmlspecialchars($row["messageID"], ENT_QUOTES)."\"> \n";
 	echo "</td> \n";
 	//plugin Subscription
 	//echo "<td> \n";
