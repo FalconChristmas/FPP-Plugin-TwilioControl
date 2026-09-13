@@ -43,29 +43,41 @@ function insertTwilioMessage($message, $pluginName, $pluginData)
     global $db;
     $messagesTable = "messages";
 
-    $insertQuery = "INSERT INTO " . $messagesTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    $insertQuery = $db->prepare("INSERT INTO " . $messagesTable . " (timestamp, message, pluginName, pluginData) VALUES (:timestamp, :message, :pluginName, :pluginData);");
+    $insertQuery->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+    $insertQuery->bindValue(':message', urlencode($message), SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginName', $pluginName, SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginData', $pluginData, SQLITE3_TEXT);
+    logEntry("TWILIO: INSERT query string: " . $insertQuery->getSQL());
+    $insertQuery->execute() or die('could not insert into database');
 }
 function insertBlacklistMessage($message, $pluginName, $pluginData)
 {
     global $db;
     $blackListTable = "blacklist";
 
-    $insertQuery = "INSERT INTO " . $blackListTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
+    $insertQuery = $db->prepare("INSERT INTO " . $blackListTable . " (timestamp, message, pluginName, pluginData) VALUES (:timestamp, :message, :pluginName, :pluginData);");
+    $insertQuery->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+    $insertQuery->bindValue(':message', urlencode($message), SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginName', $pluginName, SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginData', $pluginData, SQLITE3_TEXT);
 
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    logEntry("TWILIO: INSERT query string: " . $insertQuery->getSQL());
+    $insertQuery->execute() or die('could not insert into database');
 }
 function insertProfanityMessage($message, $pluginName, $pluginData)
 {
     global $db;
     $profanityListTable = "profanity";
 
-    $insertQuery = "INSERT INTO " . $profanityListTable . " (timestamp, message, pluginName, pluginData) VALUES ('" . time() . "','" . urlencode($message) . "','" . $pluginName . "','" . $pluginData . "');";
+    $insertQuery = $db->prepare("INSERT INTO " . $profanityListTable . " (timestamp, message, pluginName, pluginData) VALUES (:timestamp, :message, :pluginName, :pluginData);");
+    $insertQuery->bindValue(':timestamp', time(), SQLITE3_INTEGER);
+    $insertQuery->bindValue(':message', urlencode($message), SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginName', $pluginName, SQLITE3_TEXT);
+    $insertQuery->bindValue(':pluginData', $pluginData, SQLITE3_TEXT);
 
-    logEntry("TWILIO: INSERT query string: " . $insertQuery);
-    $db->exec($insertQuery) or die('could not insert into database');
+    logEntry("TWILIO: INSERT query string: " . $insertQuery->getSQL());
+    $insertQuery->execute() or die('could not insert into database');
 }
 
 //check if the user is in the blacklist
@@ -74,12 +86,13 @@ function checkBlacklist($fromNumber)
     global $db, $DEBUG;
 
     $blackListTable = "blacklist";
-    $blackListQuery = "SELECT * FROM " . $blackListTable . " WHERE pluginData = '" . $fromNumber . "'";
+    $blackListQuery = $db->prepare("SELECT * FROM " . $blackListTable . " WHERE pluginData = :number");
+    $blackListQuery->bindValue(':number', $fromNumber, SQLITE3_TEXT);
     if ($DEBUG) {
-        logEntry("TWILIO: Blacklist query: " . $blackListQuery);
+        logEntry("TWILIO: Blacklist query: " . $blackListQuery->getSQL());
     }
 
-    $result = $db->query($blackListQuery) or die('Query failed');
+    $result = $blackListQuery->execute() or die('Query failed');
     while ($row = $result->fetchArray()) {
         //TODO: return
         $blackListDate = $row['timestamp'];
@@ -102,10 +115,11 @@ function checkProfanityCount($numberToCheck)
 
     $profanityListTable = "profanity";
 
-    $profanityQuery = "SELECT COUNT(*) FROM " . $profanityListTable . " WHERE pluginData = '" . $numberToCheck . "'";
-    logEntry("TWILIO: Profanity search count query: " . $profanityQuery);
+    $profanityQuery = $db->prepare("SELECT COUNT(*) FROM " . $profanityListTable . " WHERE pluginData = :number");
+    $profanityQuery->bindValue(':number', $numberToCheck, SQLITE3_TEXT);
+    logEntry("TWILIO: Profanity search count query: " . $profanityQuery->getSQL());
 
-    $profanityCheckCountResult = $db->querySingle($profanityQuery) or die('Query failed');
+    $profanityCheckCountResult = $profanityQuery->execute()->fetchArray(SQLITE3_NUM)[0];
     logEntry("TWILIO: Profanity check counter: " . $profanityCheckCountResult);
 
     return $profanityCheckCountResult;
@@ -125,6 +139,21 @@ function checkBlacklistNumber($numberToCheck)
     } else {
         return false;
     }
+}
+
+// Check X-Twilio-Signature against the URL Twilio was given (scheme/host/port as Apache saw them)
+function twilioRequestSignatureValid($authToken)
+{
+    if (!isset($_SERVER['HTTP_X_TWILIO_SIGNATURE']) || !isset($_SERVER['HTTP_HOST']) || trim($authToken) == "") {
+        return false;
+    }
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    $host = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST'];
+    $url = ($https ? "https" : "http") . "://" . $host . $_SERVER['REQUEST_URI'];
+
+    $validator = new \Twilio\Security\RequestValidator($authToken);
+    return $validator->validate($_SERVER['HTTP_X_TWILIO_SIGNATURE'], $url, $_POST);
 }
 
 //send a TSMS message https post
@@ -162,6 +191,7 @@ function sendTSMSMessage($messageText, $toNumber = "")
     curl_setopt($ch2, CURLOPT_POST, 1);
     // Edit: prior variable $postFields should be $postfields;
     curl_setopt($ch2, CURLOPT_POSTFIELDS, $postfields);
+    curl_setopt($ch2, CURLOPT_TIMEOUT, 30);
     //curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0); // On dev server only!
     $result2 = curl_exec($ch2);
 
@@ -221,6 +251,7 @@ function runFPPCommand($command, $args = array(), $host = "localhost")
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
     curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json', 'Content-Length: ' . strlen($payload)));
     curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     $result = curl_exec($ch);
     if (curl_errno($ch)) {
         logEntry("FPP API command error: " . curl_error($ch));

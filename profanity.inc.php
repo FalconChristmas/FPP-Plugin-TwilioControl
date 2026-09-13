@@ -6,6 +6,7 @@ function curl_post_request($url, $data)
 	curl_setopt($ch, CURLOPT_POST, 1);
 	curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 	$content = curl_exec($ch);
 	curl_close($ch);
 	return $content;
@@ -24,8 +25,6 @@ function check_for_profanity_WebPurify($message) {
 	if($DEBUG)
 		logEntry("Inside Web Purify profanity checker");
 	
-	if($DEBUG)
-		logEntry("Checkurl: ".$checkurl);
 
 	$response = simplexml_load_file($checkurl,'SimpleXMLElement', LIBXML_NOCDATA);
 
@@ -59,7 +58,6 @@ global $DEBUG,$pluginSettings,$API_USER_ID, $API_KEY;
 
 
 	logEntry("API USER: ".$API_USER_ID);
-	logEntry("API KEY: ".$API_KEY);	
 	$postData = array(
 		"user-id" => $API_USER_ID,
 		"api-key" => $API_KEY,
