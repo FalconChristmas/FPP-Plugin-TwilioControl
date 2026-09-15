@@ -66,7 +66,7 @@
                 "alwaysOn": false
             },
             {
-                "to": "another FPP player you name",
+                "to": "http://another FPP player you name",
                 "what": "visitors' message text and play/stop commands",
                 "why": "to show messages on a sign or control a second player, only if you set one up",
                 "alwaysOn": false
@@ -81,7 +81,7 @@
                 "where": "plugindata/TwilioControl/"
             },
             {
-                "what": "every visitor's phone number and message, plus your swearing-checker login",
+                "what": "every visitor's phone number and message, plus your swearing-checker user name",
                 "about": "visitors",
                 "keptDays": null,
                 "canDelete": false,
@@ -97,6 +97,6 @@
             }
         ],
         "closedCode": false,
-        "other": "With the MessageQueue plugin installed, messages are kept in that plugin's database instead. In polling mode it keeps contacting Twilio even with the plugin switched off. Visitors are given no notice. Uninstall deletes the message database; the log, saved passwords and any door you opened stay."
+        "other": "With the MessageQueue plugin installed, messages are kept in that plugin's database instead. In polling mode it keeps contacting Twilio even with the plugin switched off, and in either mode a visitor who texts while it is off still gets an automatic reply. Twilio keeps its own copy of every message in your account (polling mode deletes them there). Visitors are given no notice. Uninstall deletes the message database; the log, saved passwords and any door you opened stay."
     }
 }
